@@ -11,12 +11,12 @@ namespace Stream
   class Game {
     public List<Player> players { get; set; }
     public int turn { get; set; }
-    public List<string> paths_hands = new List<string>() { "cards/decks/HHH.txt", "cards/decks/JERICHO.txt", "cards/decks/KANE.txt", "cards/decks/MANKIND.txt", "cards/decks/STONE_COLD.txt", "cards/decks/THE_ROCK.txt", "cards/decks/UNDERTAKER.txt" };
+    public List<string> paths_decks { get; set; }
     public string path_cards = "cards/cards.json";
     public string path_superstars = "cards/superstars.json";
+    public string path_decks = "cards/decks";
     public List<Card> available_cards { get; set; }
     public List<Superstar> available_superstars { get; set; }
-    public List<String> disable_characters = new List<String>() { "&", "!", "'", "?", "-", "%", "$", ".", ",", "*" };
 
     public Game(int turn)
     {
@@ -36,23 +36,34 @@ namespace Stream
       }
     }
     // print selection deck menu
-    static void deck_selection_menu(string player_number)
+    public void deck_selection_menu(string player_number)
     {
-      Console.WriteLine("Player " + player_number + " select your deck:");
-      Console.WriteLine("1. HHH");
-      Console.WriteLine("2. Jericho");
-      Console.WriteLine("3. Kane");
-      Console.WriteLine("4. Mankind");
-      Console.WriteLine("5. Stone Cold");
-      Console.WriteLine("6. The Rock");
-      Console.WriteLine("7. Undertaker");
-      Console.Write("Option: ");
+      this.paths_decks = new List<String>();
+      Console.WriteLine("-----------------------------------------------------");
+      Console.WriteLine("\nPlayer " + player_number + " select your deck:\n");
+      int i = 1;
+      foreach (string file in Directory.EnumerateFiles(this.path_decks, "*.txt"))
+      {
+        // add file to decks list
+        this.paths_decks.Add(file);
+        // Console.WriteLine(i.ToString() + ". " + file);
+        // i++;
+      }
+      // sort decks list
+      this.paths_decks.Sort();
+      // print decks list
+      foreach (string file in this.paths_decks)
+      {
+        Console.WriteLine(i.ToString() + ". " + file);
+        i++;
+      }
+      Console.Write("\nOption: ");
     }
 
     // print new game menu
-    static void new_game_menu()
+    public static void new_game_menu()
     {
-        Console.WriteLine("Welcome to the T1 program!");
+        Console.WriteLine("\nWelcome to the T1 program!\n");
         Console.WriteLine("Seleccione una opcion:");
         Console.WriteLine("1. Jugar");
         Console.WriteLine("2. Salir");
@@ -162,7 +173,7 @@ namespace Stream
     {
       deck_selection_menu((this.turn + 1).ToString());
       var deck_option = Console.ReadLine();
-      var deck_path = this.paths_hands[int.Parse(deck_option) - 1];
+      var deck_path = this.paths_decks[int.Parse(deck_option) - 1];
     
       // List<Card> deck = new List<Card>();
 
@@ -200,6 +211,8 @@ namespace Stream
         }
         num_lines++;
       }
+      // invertir el orden de la lista de cartas para que la ultima gregada quede primero en el mazo
+      this.players[turn].arsenal.Reverse();
     }
     // play game
     public void play_game()
@@ -209,25 +222,31 @@ namespace Stream
       // cargamos todos los datos de las cartas y superstars
       this.available_cards = deserialize_cards_json(this.path_cards);
       this.available_superstars = deserialize_superstars_json(this.path_superstars);
-
       // print menu inicial
       new_game_menu();
       var option = Console.ReadLine();
       if (option == "1")
       {
-        create_deck(this.turn);
-        Console.WriteLine(this.players[0].superstar.type);
-        Console.WriteLine(this.players[0].arsenal.Count);
-
-
-        // // read deck file
-        // var deck = File.ReadAllLines(deck_path, Encoding.UTF8);
-        // foreach (string line in deck)
-        // {
-        //     Console.WriteLine(line);
-        // }
-        
+        while(true)
+        {
+          
+          create_deck(this.turn);
+          Console.WriteLine(this.players[this.turn].superstar.type);
+          Console.WriteLine(this.players[this.turn].arsenal.Count);
+          // print every card in arsenal
+          foreach (Card card in this.players[this.turn].arsenal)
+          {
+            Console.WriteLine(card.Title);
+          }
+          advance_turn();
+        }
       }
+
+      else
+      {
+        Environment.Exit(0);
+      }
+      
     }
 
 
