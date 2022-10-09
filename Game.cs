@@ -11,6 +11,7 @@ namespace Stream
   class Game {
     public List<Player> players { get; set; }
     public int turn { get; set; }
+    public int round { get; set; }
     public List<string> paths_decks { get; set; }
     public string path_cards = "cards/cards.json";
     public string path_superstars = "cards/superstars.json";
@@ -36,6 +37,20 @@ namespace Stream
         this.turn = 0;
       }
     }
+
+    // check opponent
+    public int opponent()
+    {
+      if (this.turn == 0)
+      {
+        return 1;
+      }
+      else
+      {
+        return 0;
+      }
+    }
+
     // print selection deck menu
     public void deck_selection_menu(string player_number)
     {
@@ -328,12 +343,130 @@ namespace Stream
       return true;
     }
 
+    // draw starting hand
+    public void draw_starting_hand(int turn)
+    {
+      for (int i = 0; i < int.Parse(this.players[turn].superstar.hand_size); i++)
+      {
+        this.players[turn].hand.Add(this.players[turn].arsenal[i]);
+        this.players[turn].arsenal.RemoveAt(i);
+      }
+    }
+
+    // decide which player goes first
+    public void decide_who_goes_first()
+    {
+      // check the higher superstar value
+      int player1_value = int.Parse(this.players[0].superstar.superstar_value);
+      int player2_value = int.Parse(this.players[1].superstar.superstar_value);
+      if (player1_value > player2_value)
+      {
+        Console.WriteLine(this.players[0].superstar.format_name + " tiene mayor superstar value que " + this.players[1].superstar.format_name + ", por lo tanto " + this.players[0].superstar.format_name + " va primero");
+        this.turn = 0;
+      }
+      else if (player2_value > player1_value)
+      {
+        Console.WriteLine(this.players[1].superstar.format_name + " tiene mayor superstar value que " + this.players[0].superstar.format_name + ", por lo tanto " + this.players[1].superstar.format_name + " va primero");
+        this.turn = 1;
+      }
+      else
+      {
+        Console.WriteLine("Ambas superestrellas tienen el mismo superstar value, se decide por lanzamiento de moneda el jugador que va primero");
+        // random number between 0 and 1
+        Random random = new Random();
+        this.turn = random.Next(0, 2);
+      }
+    }
+
+    // before draw segment
+    public void before_draw_segment()
+    {
+      Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " puede usar su superstar hability antes de robar una carta");
+      Console.WriteLine("Quieres usar tu superstar hability?\n    1. Si\n   2. No");
+      Console.WriteLine("Escribe el numero de la opcion que quieras: ");
+      string option = Console.ReadLine();
+      if (option == "1")
+      {
+        this.players[this.turn].superstar.use_hability(this.players[this.turn], this.players[opponent()]);
+      }
+      else if (option == "2")
+      {
+        Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " no usa su superstar hability");
+      }
+      else
+      {
+        Console.WriteLine("\nOpcion invalida");
+        before_draw_segment();
+      }
+    }
+
+    // draw segment
+    public void draw_segment()
+    {
+      Console.WriteLine("\n\n-----------------------------------");
+      Console.WriteLine("Turno de " + this.players[this.turn].superstar.format_name);
+      Console.WriteLine("-----------------------------------");
+      if (this.players[this.turn].superstar.before_draw_segment)
+      {
+        before_draw_segment();
+      }
+      Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " roba una carta");
+      this.players[this.turn].hand.Add(this.players[this.turn].arsenal[0]);
+      this.players[this.turn].arsenal.RemoveAt(0);
+      // mostramos el menu de decision del jugador
+      decission_menu();
+    }
+
+    // menu decision
+    public void decission_menu()
+    {
+      Console.WriteLine("\n-----------------------------------");
+      Console.WriteLine("Se enfrentan: " + this.players[0].superstar.format_name + " vs " + this.players[1].superstar.format_name);
+      Console.WriteLine(this.players[0].superstar.format_name + " tiene " + this.players[0].fortitude_rating + "F, " + this.players[0].hand.Count + " cartas en su mano y le quedan " + this.players[0].arsenal.Count + " cartas en su arsenal");
+      Console.WriteLine(this.players[1].superstar.format_name + " tiene " + this.players[1].fortitude_rating + "F, " + this.players[1].hand.Count + " cartas en su mano y le quedan " + this.players[1].arsenal.Count + " cartas en su arsenal");
+      Console.WriteLine("-----------------------------------\n");
+
+      Console.WriteLine(this.players[this.turn].superstar.format_name + " Que quieres hacer?\n    1. Usar mi super habilidad\n    2. Ver mis cartas o las cartas de mi oponente\n    3. Jugar una carta\n    4. Terminar mi turno");
+      Console.WriteLine("Escribe el numero de la opcion que quieras: ");
+      string option = Console.ReadLine();
+      if (option == "1")
+      {
+        if (this.players[this.turn].superstar.before_draw_segment)
+        {
+          Console.WriteLine("\nOpcion invalida " + this.players[this.turn].superstar.format_name + " solo puede usar su superstar hability antes de robar una carta");
+          decission_menu();
+        }
+        else
+        {
+          this.players[this.turn].superstar.use_hability(this.players[this.turn], this.players[opponent()]);
+        }
+      }
+      else if (option == "2")
+      {
+        
+      }
+      else if (option == "3")
+      {
+        
+      }
+      else if (option == "4")
+      {
+        advance_turn();
+      }
+      else
+      {
+        Console.WriteLine("\nOpcion invalida, intenta de nuevo");
+        decission_menu();
+      }
+    }
 
     // play game
     public void play_game()
     {
       // creamos la lista de jugadores vacia
       this.players = new List<Player>();
+      // definimos el round 0
+      this.round = 0;
       // cargamos todos los datos de las cartas y superstars
       this.available_cards = deserialize_cards_json(this.path_cards);
       this.available_superstars = deserialize_superstars_json(this.path_superstars);
@@ -344,16 +477,27 @@ namespace Stream
       {
         while(true)
         {
-          
-          create_deck(this.turn);
-          Console.WriteLine(this.players[this.turn].superstar.format_name);
-          Console.WriteLine(this.players[this.turn].arsenal.Count);
-          // print every card in arsenal
-          // foreach (Card card in this.players[this.turn].arsenal)
-          // {
-          //   Console.WriteLine(card.Title);
-          // }
-          advance_turn();
+          // partida
+          if (this.round == 0)
+          {
+            create_deck(this.turn);
+            draw_starting_hand(this.turn);
+            advance_turn(); 
+            create_deck(this.turn);
+            draw_starting_hand(this.turn);
+            advance_turn();
+            Console.WriteLine("\n-----------------------------------");
+            Console.WriteLine("Se enfrentan: " + this.players[0].superstar.format_name + " vs " + this.players[1].superstar.format_name);
+            Console.WriteLine("Inicialmente " + this.players[0].superstar.format_name + " tiene " + this.players[0].fortitude_rating + "F, " + this.players[0].hand.Count + " cartas en su mano y le quedan " + this.players[0].arsenal.Count + " cartas en su arsenal");
+            Console.WriteLine("Inicialmente " + this.players[1].superstar.format_name + " tiene " + this.players[1].fortitude_rating + "F, " + this.players[1].hand.Count + " cartas en su mano y le quedan " + this.players[1].arsenal.Count + " cartas en su arsenal");
+            Console.WriteLine("-----------------------------------\n");
+            decide_who_goes_first();
+          }
+          else if (this.round > 0) {
+            // turno
+            draw_segment();
+          }
+          this.round++;
         }
       }
 
