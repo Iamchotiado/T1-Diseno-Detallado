@@ -3,12 +3,12 @@ namespace Objects{
     {
         public string name { get; set; }
         public List<Card> hand { get; set; }
-        public Superstar superstar { get; set; }
+        public dynamic superstar { get; set; }
         public List<Card> arsenal { get; set; }
         public List<Card> ringside { get; set; }
         public List<Card> ring_area { get; set; }
 
-        public Player (string name, List<Card> hand, Superstar superstar, List<Card> arsenal, List<Card> ringside, List<Card> ring_area)
+        public Player (string name, List<Card> hand, dynamic superstar, List<Card> arsenal, List<Card> ringside, List<Card> ring_area)
         {
             this.name = name;
             this.hand = hand;
@@ -36,50 +36,63 @@ namespace Objects{
 
     // class HHH herits from Superstar
     class HHH : Superstar {
+        public string format_name { get; set; }
         public HHH(string type, string hand_size, string superstar_value, string superstar_ability) : base(type, "10", "3", superstar_ability)
         {
+            this.format_name = "HHH";
         }
     }
 
     // class Jericho herits from Superstar
     class CHRISJERICHO : Superstar {
+        public string format_name { get; set; }
         public CHRISJERICHO(string type, string hand_size, string superstar_value, string superstar_ability) : base(type, "7", "3", superstar_ability)
         {
+            this.format_name = "Jericho";
         }
     }
 
     // class Kane herits from Superstar
     class KANE : Superstar {
+        public string format_name { get; set; }
         public KANE(string type, string hand_size, string superstar_value, string superstar_ability) : base(type, "7", "2", superstar_ability)
         {
+            this.format_name = "Kane";
         }
     }
 
     // class Mankind herits from Superstar
     class MANKIND : Superstar {
+        public string format_name { get; set; }
         public MANKIND(string type, string hand_size, string superstar_value, string superstar_ability) : base(type, "2", "4", superstar_ability)
         {
+            this.format_name = "Mankind";
         }
     }
-
     // class StoneCold herits from Superstar
     class STONECOLDSTEVEAUSTIN : Superstar {
+        public string format_name { get; set; }
         public STONECOLDSTEVEAUSTIN(string type, string hand_size, string superstar_value, string superstar_ability) : base(type, "7", "5", superstar_ability)
         {
+            this.format_name = "StoneCold";
         }
     }
 
     // class TheRock herits from Superstar
     class THEROCK : Superstar {
+        public string format_name { get; set; }
         public THEROCK(string type, string hand_size, string superstar_value, string superstar_ability) : base(type, "5", "5", superstar_ability)
         {
+            this.format_name = "TheRock";
         }
     }
 
     // class Undertaker herits from Superstar
     class THEUNDERTAKER : Superstar {
+        public string format_name { get; set; }
         public THEUNDERTAKER(string type, string hand_size, string superstar_value, string superstar_ability) : base(type, "6", "4", superstar_ability)
         {
+            this.format_name = "Undertaker";
         }
     }
 
@@ -150,9 +163,9 @@ namespace Objects{
         }
     }
 
-    // class BigFoot herits from Card
-    class BigFoot : Card {
-        public BigFoot(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
+    // class BigBoot herits from Card
+    class BigBoot : Card {
+        public BigBoot(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
     }

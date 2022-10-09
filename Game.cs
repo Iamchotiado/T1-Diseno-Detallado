@@ -17,6 +17,7 @@ namespace Stream
     public string path_decks = "cards/decks";
     public List<Card> available_cards { get; set; }
     public List<Superstar> available_superstars { get; set; }
+    public List<String> superstars_names = new List<String>(){"Kane", "TheRock", "Undertaker", "Mankind", "Jericho", "StoneCold", "HHH"};
 
     public Game(int turn)
     {
@@ -192,7 +193,9 @@ namespace Stream
           Superstar superstar_attr = search_superstar(this.available_superstars, card_name);
           string type = "Objects." + card_name;
           Object superstar = Activator.CreateInstance(Type.GetType(type), superstar_attr.type, superstar_attr.hand_size, superstar_attr.superstar_value, superstar_attr.superstar_ability);
-          Player player = new Player(card_name, new List<Card>(), (Superstar)superstar, new List<Card>(), new List<Card>(), new List<Card>());
+
+          dynamic converted_superstar = Convert.ChangeType(superstar, Type.GetType(type));
+          Player player = new Player(card_name, new List<Card>(), converted_superstar, new List<Card>(), new List<Card>(), new List<Card>());
           this.players.Add(player);
         }
         else
@@ -204,16 +207,128 @@ namespace Stream
           Card card_attr = search_card(this.available_cards, card_name);
           string type = "Objects." + class_name;
           Object card_obj = Activator.CreateInstance(Type.GetType(type), card_attr.Title, card_attr.Types, card_attr.Subtypes, card_attr.Fortitude, card_attr.CardEffect, card_attr.Damage, card_attr.StunValue);
+          dynamic converted_card = Convert.ChangeType(card_obj, Type.GetType(type));
           for (int i = 0; i < number_of_cards; i++)
           {
-            this.players[turn].arsenal.Add((Card)card_obj);
+            this.players[turn].arsenal.Add(converted_card);
           }
         }
         num_lines++;
       }
       // invertir el orden de la lista de cartas para que la ultima gregada quede primero en el mazo
       this.players[turn].arsenal.Reverse();
+      // check if deck is valid
+      bool valid_deck = validate_deck(turn);
+      if (!valid_deck)
+      {
+        Console.WriteLine("\nLo lamento, pero el mazo de " + this.players[turn].superstar.format_name + " es invalido\n");
+        Environment.Exit(0);
+      }
+      
     }
+
+    // 
+
+    // validate deck
+    public bool validate_deck(int turn)
+    {
+      // check if player has superstar
+      if (this.players[turn].superstar == null)
+      {
+        Console.WriteLine("\nYou must have a superstar in your deck");
+        return false;
+      }
+      // check if player arsenal has 60 cards
+      if (this.players[turn].arsenal.Count != 60)
+      {
+        Console.WriteLine("\nYou must have 60 cards in your arsenal");
+        return false;
+      }
+
+      // loop through arsenal(Condicion2 de cantidad de cartas de un tipo)
+      foreach (Card card in this.players[turn].arsenal)
+      {
+        // check if card is unique
+        if (card.Subtypes.Contains("Unique"))
+        {
+          // check if card is unique in arsenal
+          int count = 0;
+          foreach (Card card2 in this.players[turn].arsenal)
+          {
+            if (card.Title == card2.Title)
+            {
+              count++;
+            }
+          }
+          if (count > 1)
+          {
+            Console.WriteLine("\nYou can't have more than one unique card in your arsenal");
+            return false;
+          }
+        }
+        else
+        {
+          // check if a card is no more than 3 times in arsenal
+          int count = 0;
+          foreach (Card card2 in this.players[turn].arsenal)
+          {
+            if (card.Title == card2.Title)
+            {
+              count++;
+            }
+          }
+          if (count > 3)
+          {
+            if (!card.Subtypes.Contains("SetUp"))
+            {
+              Console.WriteLine("\nYou can't have more than 3 cards with the same name in your arsenal");
+              return false;
+            }
+            else
+            {
+              Console.WriteLine("\nTienes mas de 3 cartas de setup, si se puede");
+            }
+          }
+        }
+        
+      }
+      // check that arsenal does not have heel and face cards at the same time
+      bool has_face = false;
+      bool has_heel = false;
+      foreach (Card card in this.players[turn].arsenal)
+      {
+        if (card.Subtypes.Contains("Face"))
+        {
+          has_face = true;
+        }
+        if (card.Subtypes.Contains("Heel"))
+        {
+          has_heel = true;
+        }
+      }
+      if (has_face && has_heel)
+      {
+        Console.WriteLine("\nYou can't have face and heel cards in your arsenal at the same time");
+        return false;
+      }
+
+      // check that arsenal has no cards from other superstars
+      foreach (Card card in this.players[turn].arsenal)
+      {
+        // loop superstars_names
+        foreach (string superstar_name in this.superstars_names)
+        {
+          if (card.Subtypes.Contains(superstar_name) && superstar_name != this.players[turn].superstar.format_name)
+          {
+            Console.WriteLine("\nYou can't have cards from other superstars in your arsenal");
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+
     // play game
     public void play_game()
     {
@@ -231,13 +346,13 @@ namespace Stream
         {
           
           create_deck(this.turn);
-          Console.WriteLine(this.players[this.turn].superstar.type);
+          Console.WriteLine(this.players[this.turn].superstar.format_name);
           Console.WriteLine(this.players[this.turn].arsenal.Count);
           // print every card in arsenal
-          foreach (Card card in this.players[this.turn].arsenal)
-          {
-            Console.WriteLine(card.Title);
-          }
+          // foreach (Card card in this.players[this.turn].arsenal)
+          // {
+          //   Console.WriteLine(card.Title);
+          // }
           advance_turn();
         }
       }
