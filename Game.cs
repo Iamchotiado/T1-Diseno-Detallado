@@ -346,11 +346,23 @@ namespace Stream
     // draw starting hand
     public void draw_starting_hand(int turn)
     {
+      // Console.WriteLine("------------------------------------");
+      // Console.WriteLine("Rsenal antes de sacar mano inicial " + string.Join( ",", this.players[turn].arsenal.Select(x => x.Title)));
+      // Console.WriteLine("------------------------------------");
       for (int i = 0; i < int.Parse(this.players[turn].superstar.hand_size); i++)
       {
         this.players[turn].hand.Add(this.players[turn].arsenal[i]);
-        this.players[turn].arsenal.RemoveAt(i);
       }
+      for (int i = 0; i < int.Parse(this.players[turn].superstar.hand_size); i++)
+      {
+        this.players[turn].arsenal.RemoveAt(0);
+      }
+      // Console.WriteLine("------------------------------------");
+      // Console.WriteLine("Rsenal despues de sacar mano inicial " + string.Join( ",", this.players[turn].arsenal.Select(x => x.Title)));
+      // Console.WriteLine("------------------------------------");
+      // Console.WriteLine("------------------------------------");
+      // Console.WriteLine("Mano Jugador " + string.Join( ",", this.players[turn].hand.Select(x => x.Title)));
+      // Console.WriteLine("------------------------------------");
     }
 
     // decide which player goes first
@@ -375,6 +387,162 @@ namespace Stream
         // random number between 0 and 1
         Random random = new Random();
         this.turn = random.Next(0, 2);
+      }
+    }
+
+    // show my cards or my opponent cards
+    public void show_cards()
+    {
+      Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " Que cartas quieres ver?\n    1. Mi mano\n    2. Mi ringside\n    3. Mi ring area<\n    4. El ringside de mi oponente\n    5. El ring area de mi oponente\n   6. Volver a menu de acciones");
+      Console.WriteLine("\nEscribe el numero de la opcion que quieras: ");
+      string option = Console.ReadLine();
+      if (option == "1")
+      {
+        Console.WriteLine("\nTu mano es: \n");
+        int i = 0;
+        foreach (Card card in this.players[this.turn].hand)
+        {
+            Console.WriteLine("\n----------Card #" + i + "----------");
+            Console.WriteLine("Title: " + card.Title);
+            Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+            Console.WriteLine("Types: " + string.Join( ",", card.Types));
+            Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+            Console.WriteLine("Effect: " + card.CardEffect);
+
+            i++;
+        }
+        Console.WriteLine("\n");
+        show_cards();
+      }
+      else if (option == "2")
+      {
+        int i = 0;
+        Console.WriteLine("\nTu ringside es: \n");
+        foreach (Card card in this.players[this.turn].ringside)
+        {
+          Console.WriteLine("\n----------Card #" + i + "----------");
+          Console.WriteLine("Title: " + card.Title);
+          Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+          Console.WriteLine("Types: " + string.Join( ",", card.Types));
+          Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+          Console.WriteLine("Effect: " + card.CardEffect);
+          i++;
+        }
+        Console.WriteLine("\n");
+        show_cards();
+      }
+      else if (option == "3")
+      {
+        int i = 0;
+        Console.WriteLine("\nTu ring area es: \n");
+        foreach (Card card in this.players[this.turn].ring_area)
+        {
+          Console.WriteLine("\n----------Card #" + i + "----------");
+          Console.WriteLine("Title: " + card.Title);
+          Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+          Console.WriteLine("Types: " + string.Join( ",", card.Types));
+          Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+          Console.WriteLine("Effect: " + card.CardEffect);
+          i++;
+        }
+        Console.WriteLine("\n");
+        show_cards();
+      }
+      else if (option == "4")
+      {
+        int i = 0;
+        Console.WriteLine("\nEl ringside de tu oponente es: \n");
+        foreach (Card card in this.players[opponent()].ringside)
+        {
+          Console.WriteLine("\n----------Card #" + i + "----------");
+          Console.WriteLine("Title: " + card.Title);
+          Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+          Console.WriteLine("Types: " + string.Join( ",", card.Types));
+          Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+          Console.WriteLine("Effect: " + card.CardEffect);
+          i++;
+        }
+        Console.WriteLine("\n");
+        show_cards();
+      }
+      else if (option == "5")
+      {
+        int i = 0;
+        Console.WriteLine("\nEl ring area de tu oponente es: \n");
+        foreach (Card card in this.players[opponent()].ring_area)
+        {
+          Console.WriteLine("\n----------Card #" + i + "----------");
+          Console.WriteLine("Title: " + card.Title);
+          Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+          Console.WriteLine("Types: " + string.Join( ",", card.Types));
+          Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+          Console.WriteLine("Effect: " + card.CardEffect);
+          i++;
+        }
+        Console.WriteLine("\n");
+        show_cards();
+      }
+      else if (option == "6")
+      {
+        // volvemos a menu de acciones
+      }
+      else
+      {
+        Console.WriteLine("\nOpcion invalida, intenta de nuevo\n");
+        show_cards();
+      }
+    }
+
+    // play cards
+    public void play_cards()
+    {
+      Dictionary<int, int> selected_cards_dict = new Dictionary<int, int>();
+      int i = 0;
+      int seleccion = 0;
+      Console.WriteLine("\nEstas son las cartas que puedes jugar: \n");
+      // actualizar fortitude rating jugador
+      this.players[this.turn].update_fortitude_rating();
+
+      foreach (Card card in this.players[this.turn].hand)
+      {
+        if (int.Parse(card.Fortitude) <= this.players[this.turn].fortitude_rating && (card.Types.Contains("Action") || card.Types.Contains("Maneuver")))
+        {
+          if (card.Types.Contains("Action"))
+          {
+            Console.WriteLine("Jugar esta carta como [ACTION]");
+          }
+          else if (card.Types.Contains("Maneuver"))
+          {
+            Console.WriteLine("Jugar esta carta como un [MANEUVER]");
+          }
+          Console.WriteLine("\n----------Card #" + seleccion + "----------");
+          Console.WriteLine("Title: " + card.Title);
+          Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+          Console.WriteLine("Types: " + string.Join( ",", card.Types));
+          Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+          Console.WriteLine("Effect: " + card.CardEffect);
+          selected_cards_dict.Add(seleccion, i);
+          seleccion++;
+        }
+        i++;
+      }
+      Console.WriteLine("\nIngresa un numero entre 0 y " + (seleccion - 1).ToString() + " para elegir la carta a jugar, en caso contrario ingresa " + seleccion.ToString() + " para volver atras:");
+      int option = int.Parse(Console.ReadLine());
+      Console.WriteLine("\n");
+      if (option >= 0 && option < seleccion)
+      {
+        // seleccionamos la carta a jugar
+        Card card_to_play = this.players[this.turn].hand[selected_cards_dict[option]];
+        Console.WriteLine("Has seleccionado la carta: " + card_to_play.Title);
+      }
+      else if (option == seleccion)
+      {
+        // volvemos a menu de acciones
+      }
+      else
+      {
+        Console.WriteLine("\nOpcion invalida, intenta de nuevo\n");
+        play_cards();
       }
     }
 
@@ -493,11 +661,15 @@ namespace Stream
       }
       else if (option == "2")
       {
-        
+        // show cards
+        show_cards();
+        decission_menu();
       }
       else if (option == "3")
       {
-        
+        // play card
+        play_cards();
+        decission_menu();
       }
       else if (option == "4")
       {

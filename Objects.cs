@@ -19,6 +19,14 @@ namespace Objects{
             this.ring_area = ring_area;
             this.fortitude_rating = 0;
         }
+
+        public void update_fortitude_rating()
+        {
+            foreach (Card card in this.ring_area)
+            {
+                this.fortitude_rating += int.Parse(card.Damage);
+            }
+        }
     }
 
     class Superstar {
