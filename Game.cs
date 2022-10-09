@@ -439,6 +439,7 @@ namespace Stream
         else
         {
           this.players[this.turn].superstar.use_hability(this.players[this.turn], this.players[opponent()]);
+          decission_menu();
         }
       }
       else if (option == "2")

@@ -45,6 +45,11 @@ namespace Objects{
             this.format_name = "HHH";
             this.before_draw_segment = false;
         }
+        // use hability
+        public void use_hability(Player player, Player opponent)
+        {
+            Console.WriteLine(this.format_name + " No tiene superstar hability");
+        }
     }
 
     // class Jericho herits from Superstar
@@ -55,6 +60,68 @@ namespace Objects{
         {
             this.format_name = "Jericho";
             this.before_draw_segment = false;
+        }
+        // use hability
+        public void use_hability(Player player, Player opponent)
+        {
+            // you may discard a card from your hand to force your opponent to discard a card from his hand.
+            Console.WriteLine("\n-----------------------------------");
+            Console.WriteLine("Jugador " + this.format_name + " usa su super habilidad:\n");
+            Console.WriteLine(this.superstar_ability);
+            Console.WriteLine("-----------------------------------\n");
+            Console.WriteLine("Puedes descartar una carta de tu mano para obligar a tu oponente a descartar una carta de su mano.");
+            Console.WriteLine("Selecciona una carta de tu mano para descartarla, en caso contrario selecciona no usar super hability:\n");
+            
+            // loop player hand to show cards
+            int i = 0;
+            foreach (Card card in player.hand)
+            {
+                Console.WriteLine("\n----------Card #" + i + "----------");
+                Console.WriteLine("Title: " + card.Title);
+                Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+                Console.WriteLine("Types: " + string.Join( ",", card.Types));
+                Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+                Console.WriteLine("Effect: " + card.CardEffect);
+
+                i++;
+            }
+            Console.WriteLine("\nIngresa un numero entre 0 y " + (i - 1).ToString() + " para descartar una carta de tu mano, en caso contrario ingresa " + i.ToString() + " para no usar super hability:");
+            int option = int.Parse(Console.ReadLine());
+            if (option == i)
+            {
+                Console.WriteLine("\nNo se descarta ninguna carta de tu mano.");
+            }
+            else
+            {
+                // remove card from player hand and place it in the ringside
+                player.ringside.Add(player.hand[option]);
+                Console.WriteLine("\nDescartaste la carta: " + player.hand[option].Title);
+                player.hand.RemoveAt(option);
+
+                // opponent discard a card
+                Console.WriteLine("\n----------------------------------------------");
+                Console.WriteLine(opponent.superstar.format_name + "!!!! "+ this.format_name + " Uso su super habilidad. Debes descartar una carta de tu mano!");
+                Console.WriteLine("Selecciona una carta de tu mano para descartarla:\n");
+                
+                // loop player hand to show cards
+                int j = 0;
+                foreach (Card card in opponent.hand)
+                {
+                    Console.WriteLine("----------Card #" + j + "----------");
+                    Console.WriteLine("Title: " + card.Title);
+                    Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+                    Console.WriteLine("Types: " + string.Join( ",", card.Types));
+                    Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+                    Console.WriteLine("Effect: " + card.CardEffect);
+
+                    j++;
+                }
+                Console.WriteLine("Ingresa un numero entre 0 y " + (j - 1).ToString() + " para descartar una carta de tu mano:");
+                int option_opponent = int.Parse(Console.ReadLine());
+                opponent.ringside.Add(opponent.hand[option_opponent]);
+                Console.WriteLine(opponent.superstar.format_name + " Descarto la carta: " + opponent.hand[option_opponent].Title);
+                opponent.hand.RemoveAt(option_opponent);
+            }
         }
     }
 
