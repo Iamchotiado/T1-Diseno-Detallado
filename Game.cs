@@ -381,22 +381,43 @@ namespace Stream
     // before draw segment
     public void before_draw_segment()
     {
-      Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " puede usar su superstar hability antes de robar una carta");
-      Console.WriteLine("Quieres usar tu superstar hability?\n    1. Si\n   2. No");
-      Console.WriteLine("Escribe el numero de la opcion que quieras: ");
-      string option = Console.ReadLine();
-      if (option == "1")
+      // if superstar is TheRock
+      if (this.players[this.turn].superstar.format_name == "TheRock")
       {
+        // Si tiene cartas en el RingSide
+        if (this.players[this.turn].ringside.Count > 0)
+        {
+          Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " puede usar su superstar hability antes de robar una carta");
+          Console.WriteLine("Quieres usar tu superstar hability?\n    1. Si\n   2. No");
+          Console.WriteLine("Escribe el numero de la opcion que quieras: ");
+          string option = Console.ReadLine();
+          if (option == "1")
+          {
+            this.players[this.turn].superstar.use_hability(this.players[this.turn], this.players[opponent()]);
+            this.players[this.turn].superstar.hability_used = true;
+          }
+          else if (option == "2")
+          {
+            Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " no usa su superstar hability");
+          }
+          else
+          {
+            Console.WriteLine("\nOpcion invalida");
+            before_draw_segment();
+          }
+        }
+        // si el Ringside esta vacio
+        else
+        {
+          Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " no puede usar su superstar hability porque su Ringside esta vacio");
+        }
+      }
+      // else if superstar is Kane
+      else if (this.players[this.turn].superstar.format_name == "Kane")
+      {
+        Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " usa su superstar hability antes de robar una carta");
         this.players[this.turn].superstar.use_hability(this.players[this.turn], this.players[opponent()]);
-      }
-      else if (option == "2")
-      {
-        Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " no usa su superstar hability");
-      }
-      else
-      {
-        Console.WriteLine("\nOpcion invalida");
-        before_draw_segment();
+        this.players[this.turn].superstar.hability_used = true;
       }
     }
 
@@ -410,9 +431,20 @@ namespace Stream
       {
         before_draw_segment();
       }
-      Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " roba una carta");
-      this.players[this.turn].hand.Add(this.players[this.turn].arsenal[0]);
-      this.players[this.turn].arsenal.RemoveAt(0);
+      // robamos dos cartas si es Mankind
+      if (this.players[this.turn].superstar.format_name == "Mankind")
+      {
+        Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " roba dos cartas");
+        this.players[this.turn].superstar.use_hability(this.players[this.turn], this.players[opponent()]);
+        this.players[this.turn].superstar.hability_used = true;
+      }
+      // Para todos los otros superstars robamos una carta
+      else
+      {
+        Console.WriteLine("\n" + this.players[this.turn].superstar.format_name + " roba una carta");
+        this.players[this.turn].hand.Add(this.players[this.turn].arsenal[0]);
+        this.players[this.turn].arsenal.RemoveAt(0);
+      }
       // mostramos el menu de decision del jugador
       decission_menu();
     }
@@ -431,15 +463,32 @@ namespace Stream
       string option = Console.ReadLine();
       if (option == "1")
       {
+        // si son los habilities que se usan antes de robar una carta
         if (this.players[this.turn].superstar.before_draw_segment)
         {
           Console.WriteLine("\nOpcion invalida " + this.players[this.turn].superstar.format_name + " solo puede usar su superstar hability antes de robar una carta");
           decission_menu();
         }
+        // si son los habilities que se usan mientras se roba una carta
+        else if (this.players[this.turn].superstar.format_name == "Mankind")
+        {
+          Console.WriteLine("\nOpcion invalida " + this.players[this.turn].superstar.format_name + " solo puede usar su superstar hability antes de robar una carta");
+          decission_menu();
+        }
+        // si se usa durante el turno y aun no se usa
         else
         {
-          this.players[this.turn].superstar.use_hability(this.players[this.turn], this.players[opponent()]);
-          decission_menu();
+          if (!this.players[this.turn].superstar.hability_used)
+          {
+            this.players[this.turn].superstar.hability_used = true;
+            this.players[this.turn].superstar.use_hability(this.players[this.turn], this.players[opponent()]);
+            decission_menu();
+          }
+          else
+          {
+            Console.WriteLine("\nOpcion invalida " + this.players[this.turn].superstar.format_name + " ya uso su superstar hability");
+            decission_menu();
+          }
         }
       }
       else if (option == "2")
@@ -452,6 +501,7 @@ namespace Stream
       }
       else if (option == "4")
       {
+        this.players[this.turn].superstar.hability_used = false;
         advance_turn();
       }
       else

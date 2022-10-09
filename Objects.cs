@@ -26,6 +26,7 @@ namespace Objects{
         public string hand_size { get; set; }
         public string superstar_value { get; set; }
         public string superstar_ability { get; set; }
+        public bool hability_used { get; set; }
 
         public Superstar (string type, string hand_size, string superstar_value, string superstar_ability)
         {
@@ -33,6 +34,7 @@ namespace Objects{
             this.hand_size = hand_size;
             this.superstar_value = superstar_value;
             this.superstar_ability = superstar_ability;
+            this.hability_used = false;
         }
     }
 
@@ -67,7 +69,7 @@ namespace Objects{
             // you may discard a card from your hand to force your opponent to discard a card from his hand.
             Console.WriteLine("\n-----------------------------------");
             Console.WriteLine("Jugador " + this.format_name + " usa su super habilidad:\n");
-            Console.WriteLine(this.superstar_ability);
+            Console.WriteLine("Once during your turn, you may discard a card from your hand to force your opponent to discard a card from his hand.");
             Console.WriteLine("-----------------------------------\n");
             Console.WriteLine("Puedes descartar una carta de tu mano para obligar a tu oponente a descartar una carta de su mano.");
             Console.WriteLine("Selecciona una carta de tu mano para descartarla, en caso contrario selecciona no usar super hability:\n");
@@ -90,6 +92,7 @@ namespace Objects{
             if (option == i)
             {
                 Console.WriteLine("\nNo se descarta ninguna carta de tu mano.");
+                player.superstar.hability_used = false;
             }
             else
             {
@@ -134,6 +137,20 @@ namespace Objects{
             this.format_name = "Kane";
             this.before_draw_segment = true;
         }
+        // use hability
+        public void use_hability(Player player, Player opponent)
+        {
+            // At the start of your turn, before your draw segment, opponent must take the top card from his Arsenal and place it into his Ringside pile.
+            Console.WriteLine("\n-----------------------------------");
+            Console.WriteLine("Jugador " + this.format_name + " usa su super habilidad:\n");
+            Console.WriteLine("At the start of your turn, before your draw segment, opponent must take the top card from his Arsenal and place it into his Ringside pile.");
+            Console.WriteLine("-----------------------------------\n");
+            Console.WriteLine("Al inicio de tu turno, antes de tu segmento de robar, tu oponente debe tomar la carta superior de su Arsenal y colocarla en su pila Ringside.");
+            Console.WriteLine(opponent.superstar.format_name + "!!!! "+ this.format_name + " Uso su super habilidad. Debes tomar la carta superior de tu Arsenal y colocarla en tu pila Ringside!");
+            opponent.ringside.Add(opponent.arsenal[0]);
+            Console.WriteLine(opponent.superstar.format_name + " Coloco la carta: " + opponent.arsenal[0].Title + " en su pila Ringside.");
+            opponent.arsenal.RemoveAt(0);
+        }
     }
 
     // class Mankind herits from Superstar
@@ -145,6 +162,33 @@ namespace Objects{
             this.format_name = "Mankind";
             this.before_draw_segment = false;
         }
+        // use hability
+        public void use_hability(Player player, Player opponent)
+        {
+            // You must always draw 2 cards, if possible, during your draw segment. All damage from opponent is at -1D.
+            Console.WriteLine("\n-----------------------------------");
+            Console.WriteLine("Jugador " + this.format_name + " usa su super habilidad:\n");
+            Console.WriteLine("You must always draw 2 cards, if possible, during your draw segment. All damage from opponent is at -1D.");
+            Console.WriteLine("-----------------------------------\n");
+            Console.WriteLine("Debes robar 2 cartas, si es posible, durante tu segmento de robar. Todo el daño de tu oponente es -1D.");
+
+            // si quedan menos de dos cartas en el arsenal, se roba 1
+            if (player.arsenal.Count == 1)
+            {
+                player.hand.Add(player.arsenal[0]);
+                Console.WriteLine(this.format_name + " Robo la carta: " + player.arsenal[0].Title);
+                player.arsenal.RemoveAt(0);
+            }
+            else
+            {
+                // robamos la primera carta
+                player.hand.Add(player.arsenal[0]);
+                player.arsenal.RemoveAt(0);
+                // robamos la segunda carta
+                player.hand.Add(player.arsenal[0]);
+                player.arsenal.RemoveAt(0);
+            }
+        }
     }
     // class StoneCold herits from Superstar
     class STONECOLDSTEVEAUSTIN : Superstar {
@@ -154,6 +198,42 @@ namespace Objects{
         {
             this.format_name = "StoneCold";
             this.before_draw_segment = false;
+        }
+        // use hability
+        public void use_hability(Player player, Player opponent)
+        {
+            // Once during your turn, you may draw a card, but you must then take a card from your hand and place it on the bottom of your Arsenal.
+            Console.WriteLine("\n-----------------------------------");
+            Console.WriteLine("Jugador " + this.format_name + " usa su super habilidad:\n");
+            Console.WriteLine("Once during your turn, you may draw a card, but you must then take a card from your hand and place it on the bottom of your Arsenal.");
+            Console.WriteLine("-----------------------------------\n");
+            Console.WriteLine("Una vez durante tu turno, puedes robar una carta, pero luego debes tomar una carta de tu mano y colocarla en la parte inferior de tu Arsenal.");
+            // draw a card
+            player.hand.Add(player.arsenal[0]);
+            Console.WriteLine(this.format_name + " Robo la carta: " + player.arsenal[0].Title);
+            player.arsenal.RemoveAt(0);
+            // take a card from your hand and place it on the bottom of your Arsenal
+            // loop player hand to show cards
+            int i = 0;
+            foreach (Card card in player.hand)
+            {
+                Console.WriteLine("\n----------Card #" + i + "----------");
+                Console.WriteLine("Title: " + card.Title);
+                Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+                Console.WriteLine("Types: " + string.Join( ",", card.Types));
+                Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+                Console.WriteLine("Effect: " + card.CardEffect);
+
+                i++;
+            }
+            Console.WriteLine("\nIngresa un numero entre 0 y " + (i - 1).ToString() + ", para elegir la carta a colocar a lo mas abajo del mazo.");
+            int option = int.Parse(Console.ReadLine());
+            // add card to the bottom of your Arsenal
+            player.arsenal.Add(player.hand[option]);
+            Console.WriteLine(this.format_name + " puso la carta: " + player.hand[option].Title + " en la parte inferior de su Arsenal.");
+            player.hand.RemoveAt(option);
+
+            
         }
     }
 
@@ -166,6 +246,36 @@ namespace Objects{
             this.format_name = "TheRock";
             this.before_draw_segment = true;
         }
+        // use hability
+        public void use_hability(Player player, Player opponent)
+        {
+            // At the start of your turn, before your draw segment, you may take 1 card from your Ringside pile and place it on the bottom of your Arsenal.
+            Console.WriteLine("\n-----------------------------------");
+            Console.WriteLine("Jugador " + this.format_name + " usa su super habilidad:\n");
+            Console.WriteLine("At the start of your turn, before your draw segment, you may take 1 card from your Ringside pile and place it on the bottom of your Arsenal.");
+            Console.WriteLine("-----------------------------------\n");
+            Console.WriteLine("Al comienzo de tu turno, antes de tu segmento de robar, puedes tomar 1 carta de tu pila Ringside y colocarla en la parte inferior de tu Arsenal.");
+            // take 1 card from your Ringside pile and place it on the bottom of your Arsenal
+            // loop player Ringside pile to show cards
+            int i = 0;
+            foreach (Card card in player.ringside)
+            {
+                Console.WriteLine("\n----------Card #" + i + "----------");
+                Console.WriteLine("Title: " + card.Title);
+                Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+                Console.WriteLine("Types: " + string.Join( ",", card.Types));
+                Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+                Console.WriteLine("Effect: " + card.CardEffect);
+
+                i++;
+            }
+            Console.WriteLine("\nIngresa un numero entre 0 y " + (i - 1).ToString() + ", para elegir la carta del ringside a colocar a lo mas abajo del mazo.");
+            int option = int.Parse(Console.ReadLine());
+            // add card to the bottom of your Arsenal
+            player.arsenal.Add(player.ringside[option]);
+            Console.WriteLine(this.format_name + " puso la carta: " + player.ringside[option].Title + " en la parte inferior de su Arsenal.");
+            player.ringside.RemoveAt(option);
+        }
     }
 
     // class Undertaker herits from Superstar
@@ -176,6 +286,78 @@ namespace Objects{
         {
             this.format_name = "Undertaker";
             this.before_draw_segment = false;
+        }
+        // use hability
+        public void use_hability(Player player, Player opponent)
+        {
+            // Once during your turn, you may discard 2 cards to the Ringside pile and take 1 card from the Ringside pile and place it into your hand
+            Console.WriteLine("\n-----------------------------------");
+            Console.WriteLine("Jugador " + this.format_name + " usa su super habilidad:\n");
+            Console.WriteLine("Once during your turn, you may discard 2 cards to the Ringside pile and take 1 card from the Ringside pile and place it into your hand");
+            Console.WriteLine("-----------------------------------\n");
+            Console.WriteLine("Una vez durante tu turno, puedes descartar 2 cartas a la pila Ringside y tomar 1 carta de la pila Ringside y colocarla en tu mano.");
+            // discard 2 cards to the Ringside pile
+            // loop player hand to show cards
+            Console.WriteLine("\nDescarta la primera carta:");
+            int i = 0;
+            foreach (Card card in player.hand)
+            {
+                Console.WriteLine("\n----------Card #" + i + "----------");
+                Console.WriteLine("Title: " + card.Title);
+                Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+                Console.WriteLine("Types: " + string.Join( ",", card.Types));
+                Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+                Console.WriteLine("Effect: " + card.CardEffect);
+
+                i++;
+            }
+            Console.WriteLine("\nIngresa un numero entre 0 y " + (i - 1).ToString() + ", para elegir la primera carta a descartar.");
+            int option = int.Parse(Console.ReadLine());
+            // add card to the Ringside pile
+            player.ringside.Add(player.hand[option]);
+            Console.WriteLine(this.format_name + " descarto la carta: " + player.hand[option].Title + " a la pila Ringside.");
+            player.hand.RemoveAt(option);
+            Console.WriteLine("\nDescarta la segunda carta:\n");
+            // loop player hand to show cards
+            i = 0;
+            foreach (Card card in player.hand)
+            {
+                Console.WriteLine("\n----------Card #" + i + "----------");
+                Console.WriteLine("Title: " + card.Title);
+                Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+                Console.WriteLine("Types: " + string.Join( ",", card.Types));
+                Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+                Console.WriteLine("Effect: " + card.CardEffect);
+
+                i++;
+            }
+            Console.WriteLine("\nIngresa un numero entre 0 y " + (i - 1).ToString() + ", para elegir la segunda carta a descartar.");
+            option = int.Parse(Console.ReadLine());
+            // add card to the Ringside pile
+            player.ringside.Add(player.hand[option]);
+            Console.WriteLine(this.format_name + " descarto la carta: " + player.hand[option].Title + " a la pila Ringside.");
+            player.hand.RemoveAt(option);
+            // take 1 card from the Ringside pile and place it into your hand
+            // loop player Ringside pile to show cards
+            i = 0;
+            foreach (Card card in player.ringside)
+            {
+                Console.WriteLine("\n----------Card #" + i + "----------");
+                Console.WriteLine("Title: " + card.Title);
+                Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+                Console.WriteLine("Types: " + string.Join( ",", card.Types));
+                Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+                Console.WriteLine("Effect: " + card.CardEffect);
+
+                i++;
+            }
+            Console.WriteLine("\nIngresa un numero entre 0 y " + (i - 1).ToString() + ", para elegir la carta del ringside a colocar en tu mano.");
+            option = int.Parse(Console.ReadLine());
+            // add card to the hand
+            player.hand.Add(player.ringside[option]);
+            Console.WriteLine(this.format_name + " puso la carta: " + player.ringside[option].Title + " en su mano.");
+            player.ringside.RemoveAt(option);
+
         }
     }
 
