@@ -25,6 +25,23 @@ namespace Stream
       this.turn = turn;
     }
 
+    // check winner
+    public void check_winner()
+    {
+      if (this.players[0].arsenal.Count < 1)
+      {
+        Console.WriteLine("Count Out Victory!");
+        Console.WriteLine(this.players[1].superstar.format_name + " gana!");
+        Environment.Exit(0);
+      }
+      else if (this.players[1].arsenal.Count < 1)
+      {
+        Console.WriteLine("Count Out Victory!");
+        Console.WriteLine(this.players[0].superstar.format_name + " gana!");
+        Environment.Exit(0);
+      }
+    }
+
     // advance turn
     public void advance_turn()
     {
@@ -210,7 +227,7 @@ namespace Stream
           Object superstar = Activator.CreateInstance(Type.GetType(type), superstar_attr.type, superstar_attr.hand_size, superstar_attr.superstar_value, superstar_attr.superstar_ability);
 
           dynamic converted_superstar = Convert.ChangeType(superstar, Type.GetType(type));
-          Player player = new Player(card_name, new List<Card>(), converted_superstar, new List<Card>(), new List<Card>(), new List<Card>());
+          Player player = new Player(card_name, new List<dynamic>(), converted_superstar, new List<dynamic>(), new List<dynamic>(), new List<dynamic>());
           this.players.Add(player);
         }
         else
@@ -526,14 +543,24 @@ namespace Stream
         }
         i++;
       }
-      Console.WriteLine("\nIngresa un numero entre 0 y " + (seleccion - 1).ToString() + " para elegir la carta a jugar, en caso contrario ingresa " + seleccion.ToString() + " para volver atras:");
+      if (seleccion == 0)
+      {
+        Console.WriteLine("\nNo tienes cartas que puedas jugar, presiona 0 para volver atras\n");
+      }
+      else{
+        Console.WriteLine("\nIngresa un numero entre 0 y " + (seleccion - 1).ToString() + " para elegir la carta a jugar, en caso contrario ingresa " + seleccion.ToString() + " para volver atras:");
+      }
+      
       int option = int.Parse(Console.ReadLine());
       Console.WriteLine("\n");
       if (option >= 0 && option < seleccion)
       {
         // seleccionamos la carta a jugar
-        Card card_to_play = this.players[this.turn].hand[selected_cards_dict[option]];
-        Console.WriteLine("Has seleccionado la carta: " + card_to_play.Title);
+        Console.WriteLine("Has seleccionado la carta: " + this.players[this.turn].hand[selected_cards_dict[option]].Title);
+        this.players[this.turn].play_from_hand = true;
+        this.players[this.turn].hand[selected_cards_dict[option]].play_card(this.players[this.turn], this.players[opponent()]);
+        // si la revirtieron y termino turno
+        this.players[this.turn].play_from_hand = false;
       }
       else if (option == seleccion)
       {
@@ -620,6 +647,12 @@ namespace Stream
     // menu decision
     public void decission_menu()
     {
+      // chequeamos si hay un ganador
+      check_winner();
+      
+      // mostramos el menu de decision
+      this.players[0].update_fortitude_rating();
+      this.players[1].update_fortitude_rating();
       Console.WriteLine("\n-----------------------------------");
       Console.WriteLine("Se enfrentan: " + this.players[0].superstar.format_name + " vs " + this.players[1].superstar.format_name);
       Console.WriteLine(this.players[0].superstar.format_name + " tiene " + this.players[0].fortitude_rating + "F, " + this.players[0].hand.Count + " cartas en su mano y le quedan " + this.players[0].arsenal.Count + " cartas en su arsenal");
@@ -669,7 +702,17 @@ namespace Stream
       {
         // play card
         play_cards();
-        decission_menu();
+        // si la carta fue revertida y se perdio turno
+        if (this.players[this.turn].perdio_turno)
+        {
+          this.players[this.turn].superstar.hability_used = false;
+          this.players[this.turn].perdio_turno = false;
+          advance_turn();
+        }
+        else
+        {
+          decission_menu();
+        }
       }
       else if (option == "4")
       {

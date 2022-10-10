@@ -1,0 +1,2 @@
+Con respecto a las cartas, se muestran unicamente las que son validas para jugar.
+Con respecto a las opciones de juego durante el turno de un jugador, se muestran las mismas opciones siempre, y si en algun minuto una no es valida, al seleccionarla se imprime la razon por la que no es valida y se solicita seleccionar una nueva opcion hasta que esta sea valida.

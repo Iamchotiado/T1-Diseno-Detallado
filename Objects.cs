@@ -2,14 +2,16 @@ namespace Objects{
     class Player
     {
         public string name { get; set; }
-        public List<Card> hand { get; set; }
+        public List<dynamic> hand { get; set; }
         public dynamic superstar { get; set; }
-        public List<Card> arsenal { get; set; }
-        public List<Card> ringside { get; set; }
-        public List<Card> ring_area { get; set; }
+        public List<dynamic> arsenal { get; set; }
+        public List<dynamic> ringside { get; set; }
+        public List<dynamic> ring_area { get; set; }
         public int fortitude_rating { get; set; }
+        public bool perdio_turno { get; set; }
+        public bool play_from_hand { get; set; }
 
-        public Player (string name, List<Card> hand, dynamic superstar, List<Card> arsenal, List<Card> ringside, List<Card> ring_area)
+        public Player (string name, List<dynamic> hand, dynamic superstar, List<dynamic> arsenal, List<dynamic> ringside, List<dynamic> ring_area)
         {
             this.name = name;
             this.hand = hand;
@@ -18,13 +20,93 @@ namespace Objects{
             this.ringside = ringside;
             this.ring_area = ring_area;
             this.fortitude_rating = 0;
+            this.perdio_turno = false;
+            this.play_from_hand = false;
+        }
+
+        // anunciar ganador
+        public void anunciar_ganador()
+        {
+            Console.WriteLine("El ganador es: " + this.name);
+            Environment.Exit(0);
         }
 
         public void update_fortitude_rating()
         {
+            // print names of cards in ring area
+            string.Join( ",", this.ring_area.Select( x => x.Title ) );
+            string.Join( ",", this.ring_area.Select( x => x.Damage ) );
+            this.fortitude_rating = 0;
             foreach (Card card in this.ring_area)
             {
-                this.fortitude_rating += int.Parse(card.Damage);
+                if (card.Damage != "#")
+                {
+                    this.fortitude_rating += int.Parse(card.Damage);
+                }
+            }
+            Console.WriteLine("\nFortitude Rating: " + this.fortitude_rating);
+        }
+
+        // Make receive damage method
+        public void receive_damage(int damage, dynamic card, string played_as, Player atacante)
+        {
+            Console.WriteLine("-----------------------------");
+            Console.WriteLine(this.superstar.format_name + " recibe " + damage + " de daño!");
+            if (this.superstar.format_name == "Mankind")
+            {
+                damage = damage - 1;   
+            }
+            Console.WriteLine("-----------------------------");
+            Console.WriteLine(this.superstar.format_name + " recibe " + damage + " de daño!\n");
+            int descartadas = 0;
+            // if played as reversal
+            if (played_as == "reversal")
+            {
+                // move the first damage cards from arsenal to ringside
+                for (int i = 0; i < damage; i++)
+                {
+                    Console.WriteLine("-----------------------------" + (i+1).ToString() + " de " + damage.ToString() + " DAMAGE");
+                    // imprimimos la carta que sale del mazo
+                    this.arsenal[i].print_card_info();
+                    this.ringside.Add(this.arsenal[i]);
+                }
+                for (int i = 0; i < damage; i++)
+                {
+                    this.arsenal.RemoveAt(0);
+                }
+            }
+            else if (played_as == "card")
+            {
+                // move the first damage cards from arsenal to ringside
+                for (int i = 0; i < damage; i++)
+                {
+                    Console.WriteLine("-----------------------------" + (i+1).ToString() + " de " + damage.ToString() + " DAMAGE");
+                    if (descartadas == this.arsenal.Count)
+                    {
+                        Console.WriteLine("\nNo hay más cartas en el mazo!!!\nPIN VICTORY!!!\n");
+                        atacante.anunciar_ganador();
+                    }
+                    // imprimimos la carta que sale del mazo
+                    this.arsenal[i].print_card_info();
+                    // vemos si la carta sacada del mazo puede descartar el daño
+                    if (this.arsenal[i].Types.Contains("Reversal"))
+                    {
+                        if (this.arsenal[i].can_revert(card))
+                        {
+                            Console.WriteLine("Esta carta revierte la maniobra de " + atacante.superstar.format_name + " y termina su turno!");
+                            atacante.perdio_turno = true;
+                            this.ringside.Add(this.arsenal[i]);
+                            descartadas++;
+                            break;
+                        }
+                    }
+                    this.ringside.Add(this.arsenal[i]);
+                    descartadas++;
+                }
+                for (int i = 0; i < descartadas; i++)
+                {
+                    this.arsenal.RemoveAt(0);
+                }
             }
         }
     }
@@ -392,6 +474,137 @@ namespace Objects{
             this.Damage = Damage;
             this.StunValue = StunValue;
         }
+
+        // print card info
+        public void print_card_info()
+        {
+            Console.WriteLine("\n----------Card Info----------");
+            Console.WriteLine("Title: " + this.Title);
+            Console.WriteLine("Stats: " + "[" + this.Fortitude + "F" + "/" + this.Damage + "D" + "/" + this.StunValue + "SV" + "]");
+            Console.WriteLine("Types: " + string.Join( ",", this.Types));
+            Console.WriteLine("Subtypes: " + string.Join( ",", this.Subtypes));
+            Console.WriteLine("Effect: " + this.CardEffect);
+            Console.WriteLine("\n----------------------------\n");
+        }
+
+
+        // reverse general
+        public void reverse_general(Player player, Player opponent, dynamic card, dynamic reversal)
+        {
+            // move card from player hand to player ringside
+            player.ringside.Add(card);
+            player.hand.Remove(card);
+            if (reversal.Damage == "#")
+            {
+                // el player que mando como parametro aca da lo mismo, es solo cuando se juega una carta y es revertida desde el mazo para mostrar que el player perdio su turno una vez revertido su ataque desde el mazo del oponente
+                // player receives damage
+                player.receive_damage(int.Parse(card.Damage), reversal, "reversal", opponent);
+            }
+            else 
+            {
+                // el player que mando como parametro aca da lo mismo, es solo cuando se juega una carta y es revertida desde el mazo para mostrar que el player perdio su turno una vez revertido su ataque desde el mazo del oponente
+                // player receives damage
+                player.receive_damage(int.Parse(reversal.Damage), reversal, "reversal", opponent);
+            }
+            // move reversal from opponent hand to opponent ring_area
+            opponent.ring_area.Add(reversal);
+            opponent.hand.Remove(reversal);
+            player.perdio_turno = true;
+        }
+
+        // play card
+        public void play_card(Player player, Player opponent)
+        {
+            // this es la carta que se esta jugando
+            if (this.Types.Contains("Maneuver"))
+            {
+                Console.WriteLine(player.superstar.format_name + "Intenta Jugar la siguiente carta como [MANEUVER] " + this.Title);
+            }
+            else if (this.Types.Contains("Action"))
+            {
+                Console.WriteLine(player.superstar.format_name + "Intenta Jugar la siguiente carta como [ACTION] " + this.Title);
+            }
+            this.print_card_info();
+            Console.WriteLine("Pero " + opponent.superstar.format_name + " tiene la opcion de revertir la carta.");
+            // loop opponent hand to show cards
+            Dictionary<int, int> selected_cards_dict = new Dictionary<int, int>();
+            int i = 0;
+            int seleccion = 0;
+            Console.WriteLine("\nEstas son las cartas que puedes jugar: \n");
+            // actualizar fortitude rating del opponent
+            opponent.update_fortitude_rating();
+
+            foreach (dynamic card in opponent.hand)
+            {
+                if (card.Types.Contains("Reversal"))
+                {
+                    if (card.can_revert(this, player, opponent))
+                    {
+                        Console.WriteLine("Jugar esta carta como [REVERSAL]");
+                        Console.WriteLine("\n----------Card #" + seleccion + "----------");
+                        Console.WriteLine("Title: " + card.Title);
+                        Console.WriteLine("Stats: " + "[" + card.Fortitude + "F" + "/" + card.Damage + "D" + "/" + card.StunValue + "SV" + "]");
+                        Console.WriteLine("Types: " + string.Join( ",", card.Types));
+                        Console.WriteLine("Subtypes: " + string.Join( ",", card.Subtypes));
+                        Console.WriteLine("Effect: " + card.CardEffect);
+                        selected_cards_dict.Add(seleccion, i);
+                        seleccion++;
+                    }
+                }
+                i++;
+            }
+
+            bool juega_reversal = false;
+            if (seleccion == 0)
+            {
+                Console.WriteLine("\nLo lamento , pero no hay nada que puedas jugar .");
+            }
+            else
+            {
+                Console.WriteLine("\nIngresa un numero entre 0 y " + (seleccion - 1).ToString() + " para elegir la carta a jugar, en caso contrario ingresa " + seleccion.ToString() + " no jugar ningun reversal:");
+                int option = int.Parse(Console.ReadLine());
+                Console.WriteLine("\n");
+                if (option >= 0 && option < seleccion)
+                {
+                    juega_reversal = true;
+                    // jugamos reversal seleccionado
+                }
+                else if (option == seleccion)
+                {
+                    // volvemos a menu de acciones
+                }
+                else
+                {
+                    Console.WriteLine("\nOpcion invalida, intenta de nuevo\n");
+                    play_card(player, opponent);
+                }
+            }
+            Console.WriteLine("\n");
+
+            // if not juega reversal
+            if (!juega_reversal)
+            {
+                Console.WriteLine("------------------------------------------------------");
+                Console.WriteLine(opponent.superstar.format_name + " no revierte la carta de " + player.superstar.format_name);
+                if (this.Types.Contains("Maneuver"))
+                {
+                    Console.WriteLine("La carta \"" + this.Title + "\" [MANEUVER] es exitosamente jugada");
+                }
+                else if (this.Types.Contains("Action"))
+                {
+                    Console.WriteLine("La carta \"" + this.Title + "\" [MANEUVER] es exitosamente jugada");
+                }
+                this.print_card_info();
+                // oponente recibe daño
+                opponent.receive_damage(int.Parse(this.Damage), this, "card", player);
+                // move card from player hand to ring_area
+                player.ring_area.Add(this);
+                player.hand.Remove(this);
+
+            }
+
+
+        }
     }
 
     // class Chop herits from Card
@@ -448,6 +661,26 @@ namespace Objects{
         public ShoulderBlock(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+        // can revert
+        public bool can_revert(dynamic card, Player player, Player opponent)
+        {
+            // check if the last card on the player ring_area or ringside is titled "Irish Whip"
+            if (player.ring_area.Count > 0)
+            {
+                if (player.ring_area[player.ring_area.Count - 1].Title == "Irish Whip" && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+                {
+                    return true;
+                }
+            }
+            if (player.ringside.Count > 0)
+            {
+                if (player.ringside[player.ringside.Count - 1].Title == "Irish Whip" && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     // class Kick herits from Card
@@ -462,12 +695,47 @@ namespace Objects{
         public CrossBodyBlock(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+        // can revert
+        public bool can_revert(dynamic card, Player player, Player opponent)
+        {
+            // check if the last card on the player ring_area or ringside is titled "Irish Whip"
+            if (player.ring_area.Count > 0)
+            {
+                if (player.ring_area[player.ring_area.Count - 1].Title == "Irish Whip" && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+                {
+                    return true;
+                }
+            }
+            if (player.ringside.Count > 0)
+            {
+                if (player.ringside[player.ringside.Count - 1].Title == "Irish Whip" && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     // class Ensugiri herits from Card
     class Ensugiri : Card {
         public Ensugiri(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+        public bool can_revert(dynamic card, Player player, Player opponent)
+        {
+            // check if card is titled "Kick"
+            if (card.Title == "Kick" && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+            {
+                return true;
+            }
+            return false;
+        }
+        // revert card
+        public void revert_card(dynamic card, Player player, Player opponent)
+        {
+            Console.WriteLine("Pero" + opponent.superstar.format_name + "tiene la opcion de revertir la carta.");
+            reverse_general(player, opponent, card, this);
         }
     }
 
@@ -482,6 +750,22 @@ namespace Objects{
     class DropKick : Card {
         public DropKick(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+
+        public bool can_revert(dynamic card, Player player, Player opponent)
+        {
+            // check if card is titled "Drop Kick"
+            if (card.Title == "Drop Kick" && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+            {
+                return true;
+            }
+            return false;
+        }
+        // revert card
+        public void revert_card(dynamic card, Player player, Player opponent)
+        {
+            Console.WriteLine("Pero" + opponent.superstar.format_name + "tiene la opcion de revertir la carta.");
+            reverse_general(player, opponent, card, this);
         }
     }
 
@@ -510,6 +794,27 @@ namespace Objects{
     class Spear : Card {
         public Spear(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+
+        // can revert
+        public bool can_revert(dynamic card, Player player, Player opponent)
+        {
+            // check if the last card on the player ring_area or ringside is titled "Irish Whip"
+            if (player.ring_area.Count > 0)
+            {
+                if (player.ring_area[player.ring_area.Count - 1].Title == "Irish Whip" && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+                {
+                    return true;
+                }
+            }
+            if (player.ringside.Count > 0)
+            {
+                if (player.ringside[player.ringside.Count - 1].Title == "Irish Whip" && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -616,6 +921,16 @@ namespace Objects{
         public BellytoBellySuplex(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+
+        // can revert
+        public bool can_revert(dynamic card, Player player, Player opponent)
+        {
+            if (card.Title == this.Title && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+            {
+                return true;
+            }
+            return false;
+        }
     }
 
     // class AtomicFacebuster herits from Card
@@ -644,12 +959,32 @@ namespace Objects{
         public VerticalSuplex(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+
+        // can revert
+        public bool can_revert(dynamic card, Player player, Player opponent)
+        {
+            if (card.Title == this.Title && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+            {
+                return true;
+            }
+            return false;
+        }
     }
 
     // class BellytoBackSuplex herits from Card
     class BellytoBackSuplex : Card {
         public BellytoBackSuplex(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+
+        // can revert
+        public bool can_revert(dynamic card, Player player, Player opponent)
+        {
+            if (card.Title == this.Title)
+            {
+                return true;
+            }
+            return false;
         }
     }
 
@@ -865,22 +1200,72 @@ namespace Objects{
 
     // class StepAside herits from Card
     class StepAside : Card {
+        public string reversed_card { get; set; }
         public StepAside(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+            this.reversed_card = "Strike";
+        }
+        // can_revert
+        public bool can_revert(dynamic card, Player player, Player opponent) {
+            if (card.Subtypes.Contains("Strike") && opponent.fortitude_rating >= int.Parse(this.Fortitude)) {
+                return true;
+            }
+            return false;
+        }
+        // revert
+        public void revert_card(dynamic card, Player player, Player opponent) {
+            reverse_general(player, opponent, card, this);
+            player.perdio_turno = true;       
         }
     }
 
     // class EscapeMove herits from Card
     class EscapeMove : Card {
+        public string reversed_card { get; set; }
         public EscapeMove(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+            this.reversed_card = "Grapple";
         }
+        // can reverse
+        public bool can_revert(dynamic card, Player player, Player opponent)
+        {
+            if (card.Subtypes.Contains("Grapple") && opponent.fortitude_rating >= int.Parse(this.Fortitude))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        // revert
+        public void revert_card(dynamic card, Player player, Player opponent)
+        {
+            // move card from hand to ringside
+            reverse_general(player, opponent, card, this);
+            player.perdio_turno = true;
+        }
+
     }
 
     // class BreaktheHold herits from Card
     class BreaktheHold : Card {
+        public string reversed_card { get; set; }
         public BreaktheHold(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+            this.reversed_card = "Submission";
+        }
+        // can revert?
+        public bool can_revert (dynamic card, Player player, Player opponent) {
+            if (card.Subtypes.Contains("Submission") && opponent.fortitude_rating >= int.Parse(this.Fortitude)) {
+                return true;
+            }
+            return false;
+        }
+
+        // revert
+        public void revert_card (dynamic card, Player player, Player opponent) {
+            // move card from hand to ringside
+            reverse_general(player, opponent, card, this);
+            player.perdio_turno = true;
         }
     }
 
@@ -889,12 +1274,46 @@ namespace Objects{
         public RollingTakedown(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+
+        // can revert?
+        public bool can_revert(dynamic card, Player player, Player opponent)
+        {
+            if (card.Subtypes.Contains("Grapple") && opponent.fortitude_rating >= int.Parse(this.Fortitude) && int.Parse(card.Damage) <= 7)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        // revert
+        public void revert_card(dynamic card, Player player, Player opponent)
+        {
+            // move card from hand to ringside
+            reverse_general(player, opponent, card, this);
+            player.perdio_turno = true;
+        }
     }
 
     // class KneetotheGut herits from Card
     class KneetotheGut : Card {
         public KneetotheGut(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+
+        // can_revert
+        public bool can_revert(dynamic card, Player player, Player opponent) {
+            if (card.Subtypes.Contains("Strike") && opponent.fortitude_rating >= int.Parse(this.Fortitude) && int.Parse(card.Damage) <= 7)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        // revert
+        public void revert_card(dynamic card, Player player, Player opponent) {
+            // move card from hand to ringside
+            reverse_general(player, opponent, card, this);
+            player.perdio_turno = true;
         }
     }
 
@@ -903,6 +1322,20 @@ namespace Objects{
         public ElbowtotheFace(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+        // can_revert?
+        public bool can_revert(dynamic card, Player player, Player opponent) {
+            if (card.Types.Contains("Maneuver") && opponent.fortitude_rating >= int.Parse(this.Fortitude) && int.Parse(card.Damage) <= 7) {
+                return true;
+            }
+            return false;
+        }
+
+        // revert
+        public void revert_card(dynamic card, Player player, Player opponent) {
+            // move card from hand to ringside
+            reverse_general(player, opponent, card, this);
+            player.perdio_turno = true;
+        }
     }
 
     // class CleanBreak herits from Card
@@ -910,12 +1343,62 @@ namespace Objects{
         public CleanBreak(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+
+        // can_revert
+        public bool can_revert(dynamic card, Player player, Player opponent) {
+            if (player.play_from_hand && card.Title == "Jockeying for Position" && opponent.fortitude_rating >= int.Parse(this.Fortitude)) {
+                return true;
+            }
+            return false;
+        }
+
+        // revert
+        public void revert_card(dynamic card, Player player, Player opponent) {
+            // move card from hand to ringside
+            reverse_general(player, opponent, card, this);
+            // player must discard to the rinside 4 cards in hand
+            int cards_to_discard = 4;
+            for (int i = 0; i < cards_to_discard; i++) {
+                player.ringside.Add(player.hand[i]);
+            }
+            for (int i = 0; i < cards_to_discard; i++) {
+                player.hand.RemoveAt(0);
+            }
+            player.perdio_turno = true;
+
+             // opponent draw a card from arsenal to hand
+            opponent.hand.Add(opponent.arsenal[0]);
+            opponent.arsenal.RemoveAt(0);
+        }
     }
 
     // class ManagerInterferes herits from Card
     class ManagerInterferes : Card {
         public ManagerInterferes(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+
+        // can_revert?
+        public bool can_revert(dynamic card, Player player, Player opponent) {
+            if (card.Types.Contains("Maneuver") && opponent.fortitude_rating >= int.Parse(this.Fortitude)) {
+                return true;
+            }
+            return false;
+        }
+
+        // revert
+        public void revert_card(dynamic card, Player player, Player opponent) {
+            // move card from hand to ringside
+            reverse_general(player, opponent, card, this);
+            player.perdio_turno = true;
+            // if played from hand
+            if(opponent.play_from_hand)
+            {
+                // opponent draw a card from arsenal to hand
+                opponent.hand.Add(opponent.arsenal[0]);
+                opponent.arsenal.RemoveAt(0);
+            }
+
         }
     }
 
@@ -928,8 +1411,23 @@ namespace Objects{
 
     // class NoChanceinHell herits from Card
     class NoChanceinHell : Card {
+        public string reversed_card { get; set; }
         public NoChanceinHell(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+            this.reversed_card = "Action";
+        }
+        // can revert?
+        public bool can_revert (dynamic card, Player player, Player opponent) {
+            if (card.Subtypes.Contains("Action") && player.play_from_hand  && opponent.fortitude_rating >= int.Parse(this.Fortitude)) {
+                return true;
+            }
+            return false;
+        }
+        // revert
+        public void revert_card (dynamic card, Player player, Player opponent) {
+            // move card from hand to ringside
+            reverse_general(player, opponent, card, this);
+            player.perdio_turno = true;
         }
     }
 
@@ -966,12 +1464,21 @@ namespace Objects{
         public JockeyingforPosition(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+
+        // can revert?
+        public bool can_revert (dynamic card, Player player, Player opponent) {
+            return false;
+        }
     }
 
     // class IrishWhip herits from Card
     class IrishWhip : Card {
         public IrishWhip(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+        // can revert?
+        public bool can_revert (dynamic card, Player player, Player opponent) {
+            return false;
         }
     }
 
@@ -1120,12 +1627,24 @@ namespace Objects{
         public LouTheszPress(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
+        }
     }
 
     // class DoubleDigits herits from Card
     class DoubleDigits : Card {
         public DoubleDigits(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
         }
     }
 
@@ -1162,6 +1681,12 @@ namespace Objects{
         public UndertakerSitsUp(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
+        }
     }
 
     // class UndertakersTombstonePiledriver herits from Card
@@ -1183,12 +1708,22 @@ namespace Objects{
         public HaveaNiceDay(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
+        }
     }
 
     // class DoubleArmDDT herits from Card
     class DoubleArmDDT : Card {
         public DoubleArmDDT(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
         }
     }
 
@@ -1225,6 +1760,12 @@ namespace Objects{
         public Facebuster(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
+        }
     }
 
     // class IAmtheGame herits from Card
@@ -1239,12 +1780,23 @@ namespace Objects{
         public Pedigree(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
+        }
     }
 
     // class ChynaInterferes herits from Card
     class ChynaInterferes : Card {
         public ChynaInterferes(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
         }
     }
 
@@ -1260,12 +1812,23 @@ namespace Objects{
         public TakeThatMoveShineItUpRealNiceTurnThatSumbtchSidewaysandStickItStraightUpYourRoodyPooCandyA(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
+        }
     }
 
     // class RockBottom herits from Card
     class RockBottom : Card {
         public RockBottom(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
         }
     }
 
@@ -1302,6 +1865,12 @@ namespace Objects{
         public KanesReturn(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
         }
+
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
+        }
     }
 
     // class KanesTombstonePiledriver herits from Card
@@ -1336,6 +1905,12 @@ namespace Objects{
     class DontYouNeverEVER : Card {
         public DontYouNeverEVER(string Title, List <String> Types, List <String> Subtypes, string Fortitude, string CardEffect, string Damage, string StunValue) : base(Title, Types, Subtypes, Fortitude, CardEffect, Damage, StunValue)
         {
+        }
+
+        // can revert?
+        public bool can_revert()
+        {
+            return false;
         }
     }
 
