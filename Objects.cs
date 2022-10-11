@@ -94,6 +94,20 @@ namespace Objects{
                         if (this.arsenal[i].can_revert(card, atacante, this))
                         {
                             Console.WriteLine("Esta carta revierte la maniobra de " + atacante.superstar.format_name + " y termina su turno!");
+                            // vemos si faltaban cartas por tirar al ringside
+                            if ((i + 1) < damage && int.Parse(card.StunValue) > 0)
+                            {
+                                Console.WriteLine("Aplica StunValue!!!");
+                                Console.WriteLine("\n" + atacante.superstar.format_name + " roba " + card.StunValue + " cartas");
+                                for (int j = 0; j < int.Parse(card.StunValue); j++)
+                                {
+                                    atacante.hand.Add(atacante.arsenal[i]);
+                                }
+                                for (int j = 0; j < int.Parse(card.StunValue); j++)
+                                {
+                                    atacante.arsenal.RemoveAt(0);
+                                }
+                            }
                             atacante.perdio_turno = true;
                             this.ringside.Add(this.arsenal[i]);
                             descartadas++;
