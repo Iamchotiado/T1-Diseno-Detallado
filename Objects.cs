@@ -91,7 +91,7 @@ namespace Objects{
                     // vemos si la carta sacada del mazo puede descartar el daño
                     if (this.arsenal[i].Types.Contains("Reversal"))
                     {
-                        if (this.arsenal[i].can_revert(card))
+                        if (this.arsenal[i].can_revert(card, atacante, this))
                         {
                             Console.WriteLine("Esta carta revierte la maniobra de " + atacante.superstar.format_name + " y termina su turno!");
                             atacante.perdio_turno = true;
@@ -1629,7 +1629,7 @@ namespace Objects{
         }
 
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1642,7 +1642,7 @@ namespace Objects{
         }
 
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1683,7 +1683,7 @@ namespace Objects{
         }
 
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1709,7 +1709,7 @@ namespace Objects{
         {
         }
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1721,7 +1721,7 @@ namespace Objects{
         {
         }
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1762,7 +1762,7 @@ namespace Objects{
         }
 
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1781,7 +1781,7 @@ namespace Objects{
         {
         }
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1794,7 +1794,7 @@ namespace Objects{
         }
 
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1813,7 +1813,7 @@ namespace Objects{
         {
         }
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1826,7 +1826,7 @@ namespace Objects{
         }
 
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1867,7 +1867,7 @@ namespace Objects{
         }
 
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
@@ -1908,7 +1908,7 @@ namespace Objects{
         }
 
         // can revert?
-        public bool can_revert()
+        public bool can_revert(dynamic card, Player player, Player opponent)
         {
             return false;
         }
