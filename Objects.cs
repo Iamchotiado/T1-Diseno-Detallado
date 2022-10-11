@@ -568,6 +568,8 @@ namespace Objects{
                 {
                     juega_reversal = true;
                     // jugamos reversal seleccionado
+                    Console.WriteLine("\nHas seleccionado la carta: " + opponent.hand[selected_cards_dict[option]].Title);
+                    opponent.hand[selected_cards_dict[option]].revert_card(this, player, opponent);
                 }
                 else if (option == seleccion)
                 {
@@ -1346,7 +1348,7 @@ namespace Objects{
 
         // can_revert
         public bool can_revert(dynamic card, Player player, Player opponent) {
-            if (player.play_from_hand && card.Title == "Jockeying for Position" && opponent.fortitude_rating >= int.Parse(this.Fortitude)) {
+            if (card.Title == "Jockeying for Position" && opponent.fortitude_rating >= int.Parse(this.Fortitude)) {
                 return true;
             }
             return false;
@@ -1392,12 +1394,12 @@ namespace Objects{
             reverse_general(player, opponent, card, this);
             player.perdio_turno = true;
             // if played from hand
-            if(opponent.play_from_hand)
-            {
-                // opponent draw a card from arsenal to hand
-                opponent.hand.Add(opponent.arsenal[0]);
-                opponent.arsenal.RemoveAt(0);
-            }
+            // if(opponent.play_from_hand)
+            // {
+            // opponent draw a card from arsenal to hand
+            opponent.hand.Add(opponent.arsenal[0]);
+            opponent.arsenal.RemoveAt(0);
+            // }
 
         }
     }
@@ -1418,7 +1420,8 @@ namespace Objects{
         }
         // can revert?
         public bool can_revert (dynamic card, Player player, Player opponent) {
-            if (card.Subtypes.Contains("Action") && player.play_from_hand  && opponent.fortitude_rating >= int.Parse(this.Fortitude)) {
+            Console.WriteLine(player.play_from_hand.ToString());
+            if (card.Types.Contains("Action") && opponent.fortitude_rating >= int.Parse(this.Fortitude)) {
                 return true;
             }
             return false;
